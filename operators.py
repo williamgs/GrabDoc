@@ -1527,6 +1527,9 @@ class GRABDOC_OT_export_maps(OpInfo, Operator):
         return(not context.scene.grabDoc.modalState)
 
     offlineRenderType: EnumProperty(items=(('online', "Online", ""),
+                                           ('basecolor', "BaseColor", ""),
+                                           ('roughness', "Roughness", ""),
+                                           ('metalness', "Metalness", ""),
                                            ('normals', "Normals", ""),
                                            ('curvature', "Curvature", ""),
                                            ('occlusion', "Ambient Occlusion", ""),
@@ -1821,7 +1824,10 @@ class GRABDOC_OT_map_preview_warning(OpInfo, Operator):
     bl_label = "    MATERIAL PREVIEW WARNING"
     bl_options = {'INTERNAL'}
 
-    preview_type: EnumProperty(items=(('normals', "", ""),
+    preview_type: EnumProperty(items=(('basecolor', "BaseColor", ""),
+                                      ('roughness', "Roughness", ""),
+                                      ('metalness', "Metalness", ""),
+                                      ('normals', "", ""),
                                       ('curvature', "", ""),
                                       ('occlusion', "", ""),
                                       ('height', "", ""),

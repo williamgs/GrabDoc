@@ -147,7 +147,7 @@ class GRABDOC_PT_export(PanelInfo, Panel):
                     row.prop(grabDoc, "imageCompTIFF", text = "Compression")
         else: # Marmoset
             row = box.row(align = True)
-            row.prop(grabDoc, "marmoSamples", text = "Sampling", expand = True)
+            row.prop(grabDoc, "marmoSamples", text = "Samples", expand = True)
 
         box = col.box()
         box.use_property_split = False
@@ -181,6 +181,9 @@ class GRABDOC_OT_config_maps(bpy.types.Operator):
         grabDoc = context.scene.grabDoc
 
         layout = self.layout
+        layout.prop(grabDoc, 'uiVisibilityBaseColor', text = "BaseColor")
+        layout.prop(grabDoc, 'uiVisibilityRoughness', text = "Roughness")
+        layout.prop(grabDoc, 'uiVisibilityMetalness', text = "Metalness")
         layout.prop(grabDoc, 'uiVisibilityNormals', text = "Normals")
         layout.prop(grabDoc, 'uiVisibilityCurvature', text = "Curvature")
         layout.prop(grabDoc, 'uiVisibilityOcclusion', text = "Ambient Occlusion")
@@ -238,6 +241,132 @@ class GRABDOC_PT_view_edit_maps(PanelInfo, Panel):
             elif grabDoc.modalPreviewType == 'ID':
                 id_ui(layout, self, context)
 
+class GRABDOC_PT_basecolor_settings(PanelInfo, Panel):
+    bl_label = ''
+    bl_parent_id = "GRABDOC_PT_view_edit_maps"
+    bl_options = {'HEADER_LAYOUT_EXPAND', 'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.grabDoc.modalState and context.scene.grabDoc.uiVisibilityBaseColor
+
+    def draw_header(self, context):
+        grabDoc = context.scene.grabDoc
+
+        row = self.layout.row(align = True)
+        row.separator()
+        row.prop(grabDoc, 'exportBaseColor', text = "")
+
+        if grabDoc.firstBakePreview:
+            row.operator("grab_doc.preview_warning", text = "BaseColor Preview").preview_type = 'basecolor'
+        else:
+            row.operator("grab_doc.preview_map", text = "BaseColor Preview").preview_type = 'basecolor'
+        
+        row.operator("grab_doc.export_maps", text = "", icon = "RENDER_STILL").offlineRenderType = 'basecolor'
+        row.separator(factor = 1.3)
+    
+    def draw(self, context):
+        basecolor_ui(self.layout, self, context)
+
+def basecolor_ui(layout, self, context):
+    grabDoc = context.scene.grabDoc
+
+    layout.use_property_split = True
+    layout.use_property_decorate = False
+
+    col = layout.column()
+
+    if grabDoc.bakerType == 'Blender':
+        col.separator(factor=.5)
+        col.prop(grabDoc, 'reimportAsMatBaseColor', text = "Import as Material")
+
+        col.separator(factor=1.5)
+        col.prop(grabDoc, "samplesBaseColor", text = 'Samples')
+
+class GRABDOC_PT_roughness_settings(PanelInfo, Panel):
+    bl_label = ''
+    bl_parent_id = "GRABDOC_PT_view_edit_maps"
+    bl_options = {'HEADER_LAYOUT_EXPAND', 'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.grabDoc.modalState and context.scene.grabDoc.uiVisibilityRoughness
+
+    def draw_header(self, context):
+        grabDoc = context.scene.grabDoc
+
+        row = self.layout.row(align = True)
+        row.separator()
+        row.prop(grabDoc, 'exportRoughness', text = "")
+
+        if grabDoc.firstBakePreview:
+            row.operator("grab_doc.preview_warning", text = "Roughness Preview").preview_type = 'roughness'
+        else:
+            row.operator("grab_doc.preview_map", text = "Roughness Preview").preview_type = 'roughness'
+        
+        row.operator("grab_doc.export_maps", text = "", icon = "RENDER_STILL").offlineRenderType = 'roughness'
+        row.separator(factor = 1.3)
+
+    def draw(self, context):
+        roughness_ui(self.layout, self, context)
+
+def roughness_ui(layout, self, context):
+    grabDoc = context.scene.grabDoc
+
+    layout.use_property_split = True
+    layout.use_property_decorate = False
+
+    col = layout.column()
+
+    if grabDoc.bakerType == 'Blender':
+        col.separator(factor=.5)
+        col.prop(grabDoc, 'reimportAsMatRoughness', text = "Import as Material")
+
+        col.separator(factor=1.5)
+        col.prop(grabDoc, "samplesRoughness", text = 'Samples')
+
+class GRABDOC_PT_metalness_settings(PanelInfo, Panel):
+    bl_label = ''
+    bl_parent_id = "GRABDOC_PT_view_edit_maps"
+    bl_options = {'HEADER_LAYOUT_EXPAND', 'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        return not context.scene.grabDoc.modalState and context.scene.grabDoc.uiVisibilityMetalness
+
+    def draw_header(self, context):
+        grabDoc = context.scene.grabDoc
+
+        row = self.layout.row(align = True)
+        row.separator()
+        row.prop(grabDoc, 'exportMetalness', text = "")
+
+        if grabDoc.firstBakePreview:
+            row.operator("grab_doc.preview_warning", text = "Metalness Preview").preview_type = 'metalness'
+        else:
+            row.operator("grab_doc.preview_map", text = "Metalness Preview").preview_type = 'metalness'
+        
+        row.operator("grab_doc.export_maps", text = "", icon = "RENDER_STILL").offlineRenderType = 'metalness'
+        row.separator(factor = 1.3)
+    
+    def draw(self, context):
+        metalness_ui(self.layout, self, context)
+
+def metalness_ui(layout, self, context):
+    grabDoc = context.scene.grabDoc
+
+    layout.use_property_split = True
+    layout.use_property_decorate = False
+
+    col = layout.column()
+    #col.prop(grabDoc, 'metalnessOption1', text = "Metalness Option 1")
+
+    if grabDoc.bakerType == 'Blender':
+        col.separator(factor=.5)
+        col.prop(grabDoc, 'reimportAsMatMetalness', text = "Import as Material")
+
+        col.separator(factor=1.5)
+        col.prop(grabDoc, "samplesMetalness", text = 'Samples')
 
 class GRABDOC_PT_normals_settings(PanelInfo, Panel):
     bl_label = ''
@@ -280,7 +409,7 @@ def normals_ui(layout, self, context):
         col.prop(grabDoc, 'reimportAsMatNormals', text = "Import as Material")
 
         col.separator(factor=1.5)
-        col.prop(grabDoc, "samplesNormals", text = 'Sampling')
+        col.prop(grabDoc, "samplesNormals", text = 'Samples')
 
 
 class GRABDOC_PT_curvature_settings(PanelInfo, Panel):
@@ -325,7 +454,7 @@ def curvature_ui(layout, self, context):
         col.prop(grabDoc, 'valleyCurvature', text = "Valley")
 
         col.separator(factor=1.5)
-        col.prop(grabDoc, "samplesCurvature", text = "Sampling")
+        col.prop(grabDoc, "samplesCurvature", text = "Samples")
         col.separator(factor=.5)
         col.prop(grabDoc, 'contrastCurvature', text = "Contrast")
     else: # Marmoset
@@ -515,6 +644,9 @@ classes = (GRABDOC_PT_grabdoc,
            GRABDOC_OT_config_maps,
            GRABDOC_PT_export,
            GRABDOC_PT_view_edit_maps,
+           GRABDOC_PT_basecolor_settings,
+           GRABDOC_PT_roughness_settings,
+           GRABDOC_PT_metalness_settings,
            GRABDOC_PT_normals_settings,
            GRABDOC_PT_curvature_settings,
            GRABDOC_PT_occlusion_settings,

@@ -57,6 +57,9 @@ class GRABDOC_OT_add_preset(AddPresetBase, bpy.types.Operator):
         "grabDoc.exportPlane",        
         "grabDoc.openFolderOnExport",
 
+        "grabDoc.uiVisibilityBaseColor",
+        "grabDoc.uiVisibilityRoughness",
+        "grabDoc.uiVisibilityMetalness",
         "grabDoc.uiVisibilityNormals",
         "grabDoc.uiVisibilityCurvature",
         "grabDoc.uiVisibilityOcclusion",
@@ -64,6 +67,18 @@ class GRABDOC_OT_add_preset(AddPresetBase, bpy.types.Operator):
         "grabDoc.uiVisibilityMatID",
 
         "grabDoc.autoExitCamera",
+
+        "grabDoc.exportBaseColor",
+        "grabDoc.reimportAsMatBaseColor",
+        "grabDoc.samplesBaseColor",
+
+        "grabDoc.exportRoughness",
+        "grabDoc.reimportAsMatRoughness",
+        "grabDoc.samplesRoughness",
+
+        "grabDoc.exportMetalness",
+        "grabDoc.reimportAsMatMetalness",
+        "grabDoc.samplesMetalness",
 
         "grabDoc.exportNormals",
         "grabDoc.reimportAsMatNormals",
@@ -252,6 +267,9 @@ class GRABDOC_property_group(bpy.types.PropertyGroup):
     exportPlane: BoolProperty(name = "Export Plane", description = "Exports the background plane as a .FBX for use in an external program")
     openFolderOnExport: BoolProperty(description = "This option will open up the folder path whenever you export maps")
 
+    uiVisibilityBaseColor: BoolProperty(default = True)
+    uiVisibilityRoughness: BoolProperty(default = True)
+    uiVisibilityMetalness: BoolProperty(default = True)
     uiVisibilityNormals: BoolProperty(default = True)
     uiVisibilityCurvature: BoolProperty(default = True)
     uiVisibilityOcclusion: BoolProperty(default = True)
@@ -259,6 +277,18 @@ class GRABDOC_property_group(bpy.types.PropertyGroup):
     uiVisibilityMatID: BoolProperty(default = True)
 
     # Bake map options
+    exportBaseColor: BoolProperty(default = True)
+    reimportAsMatBaseColor: BoolProperty(description = "This will reimport the map as a material for use in Blender")
+    samplesBaseColor: IntProperty(name = "", default = 4, min = 1, max = 256)
+
+    exportRoughness: BoolProperty(default = True)
+    reimportAsMatRoughness: BoolProperty(description = "This will reimport the map as a material for use in Blender")
+    samplesRoughness: IntProperty(name = "", default = 4, min = 1, max = 256)
+
+    exportMetalness: BoolProperty(default = True)
+    reimportAsMatMetalness: BoolProperty(description = "This will reimport the map as a material for use in Blender")
+    samplesMetalness: IntProperty(name = "", default = 4, min = 1, max = 256)
+    
     exportNormals: BoolProperty(default = True)
     reimportAsMatNormals: BoolProperty(description = "This will reimport the Normal map as a material for use in Blender")
     flipYNormals: BoolProperty(name = "Flip Y (-Y)", description = "Flip the normal map Y direction", options = {'SKIP_SAVE'}, update = update_flip_y)
@@ -329,6 +359,9 @@ class GRABDOC_property_group(bpy.types.PropertyGroup):
 
     modalState: BoolProperty()
     modalPreviewType: EnumProperty(items=(('none', "None", ""),
+                                          ('basecolor', "BaseColor", ""),
+                                          ('roughness', "Roughness", ""),
+                                          ('metalness', "Metalness", ""),
                                           ('normals', "Normals", ""),
                                           ('curvature', "Curvature", ""),
                                           ('occlusion', "Ambient Occlusion", ""),
