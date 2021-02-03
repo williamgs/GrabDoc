@@ -103,6 +103,15 @@ class GRABDOC_OT_remove_setup(Operator):
 
     def execute(self, context):
         # Remove Node Groups
+        if 'GD_BaseColor' in bpy.data.node_groups:
+            bpy.data.node_groups.remove(bpy.data.node_groups["GD_BaseColor"])
+
+        if 'GD_Roughness' in bpy.data.node_groups:
+            bpy.data.node_groups.remove(bpy.data.node_groups["GD_Roughness"])
+
+        if 'GD_Metalness' in bpy.data.node_groups:
+            bpy.data.node_groups.remove(bpy.data.node_groups["GD_Metalness"])
+
         if 'GD_Normals' in bpy.data.node_groups:
             bpy.data.node_groups.remove(bpy.data.node_groups["GD_Normals"])
 
@@ -438,6 +447,53 @@ def uv_orient_pc(ob_name, vertices, edges = [(0,2), (0,1), (1,2)], faces = []):
 
 def ng_setup(self, context):
     grabDoc = context.scene.grabDoc
+
+    # BASECOLOR
+    """
+    if not 'GD_BaseColor' in bpy.data.node_groups:
+        # Create node group
+        ng_basecolor = bpy.data.node_groups.new('GD_BaseColor', 'ShaderNodeTree')
+        ng_basecolor.use_fake_user = True
+
+        # Create group outputs
+        group_outputs = ng_basecolor.nodes.new('NodeGroupOutput')
+        ng_basecolor.outputs.new('NodeSocketShader','Output')
+        ng_basecolor.inputs.new('NodeSocketShader','Saved Input')
+
+        # Create group nodes
+        
+        geo_node = ng_basecolor.nodes.new('ShaderNodeNewGeometry')
+        geo_node.location = (-800,0)
+
+        vec_transform_node = ng_basecolor.nodes.new('ShaderNodeVectorTransform')
+        vec_transform_node.vector_type = 'NORMAL'
+        vec_transform_node.convert_to = 'CAMERA'
+        vec_transform_node.location = (-600,0)
+
+        vec_multiply_node = ng_basecolor.nodes.new('ShaderNodeVectorMath')
+        vec_multiply_node.operation = 'MULTIPLY'
+        vec_multiply_node.inputs[1].default_value[0] = .5
+        vec_multiply_node.inputs[1].default_value[1] = .5
+        vec_multiply_node.inputs[1].default_value[2] = -.5
+        vec_multiply_node.location = (-400,0)
+
+        vec_add_node = ng_basecolor.nodes.new('ShaderNodeVectorMath')
+        vec_add_node.inputs[1].default_value[0] = vec_add_node.inputs[1].default_value[1] = vec_add_node.inputs[1].default_value[2] = 0.5
+        vec_add_node.location = (-200,0)
+        
+
+        # Link nodes
+        link = ng_basecolor.links
+
+        link.new(vec_transform_node.inputs["Vector"], geo_node.outputs["basecolor"])
+        link.new(vec_multiply_node.inputs["Vector"], vec_transform_node.outputs["Vector"])
+        link.new(vec_add_node.inputs["Vector"], vec_multiply_node.outputs["Vector"])
+        link.new(group_outputs.inputs["Output"], vec_add_node.outputs["Vector"])
+    """
+
+    # ROUGHNESS
+
+    # METALNESS
 
     # NORMALS
 
@@ -1168,9 +1224,85 @@ def add_ng_to_mat(self, context):
                             mat_slot.node_tree.links.new(output_node.inputs["Surface"], GD_node_group.outputs["Output"])
 
 
+## BASECOLOR ##
+def basecolor_setup(self, context):
+    grabDoc = context.scene.grabDoc
+    render = context.scene.render
+
+    render.engine = 'BLENDER_EEVEE'
+    context.scene.eevee.taa_render_samples = grabDoc.samplesBaseColor
+    render.image_settings.color_mode = 'RGB'
+    context.scene.display_settings.display_device = 'None'
+
+    self.setup_type = 'GD_BaseColor'
+    #add_ng_to_mat(self, context)
+
+def basecolor_export(self, context):
+    if self.offlineRenderType == "basecolor":
+        offline_render(self, context)
+    else:
+        grabdoc_export(self, context, exportSuffix="_basecolor")
+
+        # Reimport the BaseColor map as a material (if the option is turned on)
+        if context.scene.grabDoc.reimportAsMatBaseColor:
+            basecolor_reimport_as_mat(self, context)
+
+def basecolor_reimport_as_mat(self, context):
+    return
+
+## ROUGHNESS ##
+def roughness_setup(self, context):
+    grabDoc = context.scene.grabDoc
+    render = context.scene.render
+
+    render.engine = 'BLENDER_EEVEE'
+    context.scene.eevee.taa_render_samples = grabDoc.samplesRoughness
+    render.image_settings.color_mode = 'BW'
+    context.scene.display_settings.display_device = 'None'
+
+    self.setup_type = 'GD_Roughness'
+    #add_ng_to_mat(self, context)
+
+def roughness_export(self, context):
+    if self.offlineRenderType == "roughness":
+        offline_render(self, context)
+    else:
+        grabdoc_export(self, context, exportSuffix="_roughness")
+
+        # Reimport the Roughness map as a material (if the option is turned on)
+        if context.scene.grabDoc.reimportAsMatRoughness:
+            roughness_reimport_as_mat(self, context)
+
+def roughness_reimport_as_mat(self, context):
+    return
+
+## METALNESS ##
+def metalness_setup(self, context):
+    grabDoc = context.scene.grabDoc
+    render = context.scene.render
+
+    render.engine = 'BLENDER_EEVEE'
+    context.scene.eevee.taa_render_samples = grabDoc.samplesMetalness
+    render.image_settings.color_mode = 'BW'
+    context.scene.display_settings.display_device = 'None'
+
+    self.setup_type = 'GD_Metalness'
+    #add_ng_to_mat(self, context)
+
+def metalness_export(self, context):
+    if self.offlineRenderType == "metalness":
+        offline_render(self, context)
+    else:
+        grabdoc_export(self, context, exportSuffix="_metalness")
+
+        # Reimport the Metalness map as a material (if the option is turned on)
+        if context.scene.grabDoc.reimportAsMatMetalness:
+            metalness_reimport_as_mat(self, context)
+
+def metalness_reimport_as_mat(self, context):
+    return
+
 ## NORMALS ##
-
-
 def normals_setup(self, context):
     grabDoc = context.scene.grabDoc
     render = context.scene.render
@@ -1243,10 +1375,7 @@ def normals_reimport_as_mat(self, context):
     link.new(normal_map_node.inputs['Color'], image_node.outputs['Color'])
     link.new(bsdf_node.inputs['Normal'], normal_map_node.outputs['Normal'])
 
-
 ## CURVATURE ##
-
-
 def curvature_setup(self, context):
     scene = context.scene
     grabDoc = scene.grabDoc
@@ -1308,10 +1437,7 @@ def curvature_refresh(self, context):
     
     bpy.data.objects["GD_Background Plane"].color[3] = 1
 
-
 ## AMBIENT OCCLUSION ##
-
-
 def occlusion_setup(self, context):
     grabDoc = context.scene.grabDoc
     render = context.scene.render
@@ -1402,10 +1528,7 @@ def occlusion_reimport_as_mat(self, context):
 
     link.new(output_node.inputs['Surface'], image_node.outputs['Color'])
 
-
 ## HEIGHT ##
-
-
 def height_setup(self, context):
     grabDoc = context.scene.grabDoc
     render = context.scene.render
@@ -1426,11 +1549,8 @@ def height_export(self, context):
         offline_render(self, context)
     else:
         grabdoc_export(self, context, exportSuffix="_height")
-        
 
 ## MATERIAL ID ##
-
-
 def id_setup(self, context):
     render = context.scene.render
     scene_shading = bpy.data.scenes[str(context.scene.name)].display.shading
@@ -1568,21 +1688,42 @@ class GRABDOC_OT_export_maps(OpInfo, Operator):
         plane_ob = bpy.data.objects["GD_Background Plane"]
         plane_ob.scale[0] = plane_ob.scale[1] = 3
 
-        context.window_manager.progress_update(14)
+        context.window_manager.progress_update(10)
+
+        if grabDoc.uiVisibilityBaseColor and grabDoc.exportBaseColor and self.offlineRenderType == 'online' or self.offlineRenderType == "basecolor":
+            basecolor_setup(self, context)
+            basecolor_export(self, context)
+            cleanup_ng_from_mat(self, context)
+
+        context.window_manager.progress_update(20)
+
+        if grabDoc.uiVisibilityRoughness and grabDoc.exportRoughness and self.offlineRenderType == 'online' or self.offlineRenderType == "roughness":
+            roughness_setup(self, context)
+            roughness_export(self, context)
+            cleanup_ng_from_mat(self, context)
+
+        context.window_manager.progress_update(30)
+
+        if grabDoc.uiVisibilityMetalness and grabDoc.exportMetalness and self.offlineRenderType == 'online' or self.offlineRenderType == "metalness":
+            metalness_setup(self, context)
+            metalness_export(self, context)
+            cleanup_ng_from_mat(self, context)
+
+        context.window_manager.progress_update(40)
 
         if grabDoc.uiVisibilityNormals and grabDoc.exportNormals and self.offlineRenderType == 'online' or self.offlineRenderType == "normals":
             normals_setup(self, context)
             normals_export(self, context)
             cleanup_ng_from_mat(self, context)
 
-        context.window_manager.progress_update(28)
+        context.window_manager.progress_update(50)
 
         if grabDoc.uiVisibilityCurvature and grabDoc.exportCurvature and self.offlineRenderType == 'online' or self.offlineRenderType == "curvature":
             curvature_setup(self, context)
             curvature_export(self, context)
             curvature_refresh(self, context)
 
-        context.window_manager.progress_update(42)
+        context.window_manager.progress_update(60)
 
         if grabDoc.uiVisibilityOcclusion and grabDoc.exportOcclusion and self.offlineRenderType == 'online' or self.offlineRenderType == "occlusion":
             occlusion_setup(self, context)
@@ -1590,20 +1731,20 @@ class GRABDOC_OT_export_maps(OpInfo, Operator):
             cleanup_ng_from_mat(self, context)
             occlusion_refresh(self, context)
 
-        context.window_manager.progress_update(56)
+        context.window_manager.progress_update(70)
 
         if grabDoc.uiVisibilityHeight and grabDoc.exportHeight and self.offlineRenderType == 'online' or self.offlineRenderType == "height":
             height_setup(self, context)
             height_export(self, context)
             cleanup_ng_from_mat(self, context)
 
-        context.window_manager.progress_update(70)
+        context.window_manager.progress_update(80)
 
         if grabDoc.uiVisibilityMatID and grabDoc.exportMatID and self.offlineRenderType == 'online' or self.offlineRenderType == "ID":
             id_setup(self, context)
             id_export(self, context)
 
-        context.window_manager.progress_update(84)
+        context.window_manager.progress_update(90)
 
         # Scale down BG Plane (helps overscan & border pixels)
         plane_ob = bpy.data.objects["GD_Background Plane"]
@@ -1862,7 +2003,10 @@ class GRABDOC_OT_map_preview(OpInfo, Operator):
     bl_label = ""
     bl_options = {'INTERNAL'}
 
-    preview_type: EnumProperty(items=(('normals', "", ""),
+    preview_type: EnumProperty(items=(('basecolor', "", ""),
+                                      ('roughness', "", ""),
+                                      ('metalness', "", ""),
+                                      ('normals', "", ""),
                                       ('curvature', "", ""),
                                       ('occlusion', "", ""),
                                       ('height', "", ""),
@@ -1892,7 +2036,16 @@ class GRABDOC_OT_map_preview(OpInfo, Operator):
         if grabDoc.imageType != 'TARGA':
             image_settings.color_depth = grabDoc.colorDepth
 
-        if self.preview_type == "normals":
+        if self.preview_type == "basecolor":
+            context.scene.eevee.taa_render_samples = grabDoc.samplesBaseColor
+        
+        elif self.preview_type == "roughness":
+            context.scene.eevee.taa_render_samples = grabDoc.samplesRoughness
+        
+        elif self.preview_type == "metalness":
+            context.scene.eevee.taa_render_samples = grabDoc.samplesMetalness
+        
+        elif self.preview_type == "normals":
             context.scene.eevee.taa_render_samples = grabDoc.samplesNormals
     
         elif self.preview_type == "curvature":
@@ -1998,7 +2151,13 @@ class GRABDOC_OT_map_preview(OpInfo, Operator):
         # Set - Preview type
         grabDoc.modalPreviewType = self.preview_type
 
-        if self.preview_type == 'normals':
+        if   self.preview_type == 'basecolor':
+            basecolor_setup(self, context)
+        elif self.preview_type == 'roughness':
+            roughness_setup(self, context)
+        elif self.preview_type == 'metalness':
+            metalness_setup(self, context)
+        elif self.preview_type == 'normals':
             normals_setup(self, context)
         elif self.preview_type == 'curvature':
             curvature_setup(self, context)
@@ -2051,8 +2210,20 @@ class GRABDOC_OT_export_current_preview(OpInfo, Operator):
         # Refresh - file output path
         render.filepath = savedPath
 
+        # Reimport the BaseColor map as a material if requested
+        if grabDoc.modalPreviewType == 'basecolor' and grabDoc.reimportAsMatBaseColor:
+            basecolor_reimport_as_mat(self, context)
+
+        # Reimport the Roughness map as a material if requested
+        elif grabDoc.modalPreviewType == 'roughness' and grabDoc.reimportAsMatRoughness:
+            roughness_reimport_as_mat(self, context)
+
+        # Reimport the Metalness map as a material if requested
+        elif grabDoc.modalPreviewType == 'metalness' and grabDoc.reimportAsMatMetalness:
+            metalness_reimport_as_mat(self, context)
+
         # Reimport the Normal map as a material if requested
-        if grabDoc.modalPreviewType == 'normals' and grabDoc.reimportAsMatNormals:
+        elif grabDoc.modalPreviewType == 'normals' and grabDoc.reimportAsMatNormals:
             normals_reimport_as_mat(self, context)
 
         # Reimport the Occlusion map as a material if requested
