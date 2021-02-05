@@ -448,8 +448,7 @@ def uv_orient_pc(ob_name, vertices, edges = [(0,2), (0,1), (1,2)], faces = []):
 def ng_setup(self, context):
     grabDoc = context.scene.grabDoc
 
-    # BASECOLOR
-    """
+    # BASECOLOR    
     if not 'GD_BaseColor' in bpy.data.node_groups:
         # Create node group
         ng_basecolor = bpy.data.node_groups.new('GD_BaseColor', 'ShaderNodeTree')
@@ -459,44 +458,75 @@ def ng_setup(self, context):
         group_outputs = ng_basecolor.nodes.new('NodeGroupOutput')
         ng_basecolor.outputs.new('NodeSocketShader','Output')
         ng_basecolor.inputs.new('NodeSocketShader','Saved Input')
+        ng_basecolor.inputs.new('NodeSocketColor','BaseColor')
 
         # Create group nodes
+        aov_node = ng_basecolor.nodes.new('ShaderNodeOutputAOV')
+        aov_node.location = (0,-200)
+        aov_node.name = 'BaseColor'
         
-        geo_node = ng_basecolor.nodes.new('ShaderNodeNewGeometry')
-        geo_node.location = (-800,0)
-
-        vec_transform_node = ng_basecolor.nodes.new('ShaderNodeVectorTransform')
-        vec_transform_node.vector_type = 'NORMAL'
-        vec_transform_node.convert_to = 'CAMERA'
-        vec_transform_node.location = (-600,0)
-
-        vec_multiply_node = ng_basecolor.nodes.new('ShaderNodeVectorMath')
-        vec_multiply_node.operation = 'MULTIPLY'
-        vec_multiply_node.inputs[1].default_value[0] = .5
-        vec_multiply_node.inputs[1].default_value[1] = .5
-        vec_multiply_node.inputs[1].default_value[2] = -.5
-        vec_multiply_node.location = (-400,0)
-
-        vec_add_node = ng_basecolor.nodes.new('ShaderNodeVectorMath')
-        vec_add_node.inputs[1].default_value[0] = vec_add_node.inputs[1].default_value[1] = vec_add_node.inputs[1].default_value[2] = 0.5
-        vec_add_node.location = (-200,0)
-        
+        group_inputs = ng_basecolor.nodes.new('NodeGroupInput')
+        group_inputs.location = (-400,0)
 
         # Link nodes
         link = ng_basecolor.links
 
-        link.new(vec_transform_node.inputs["Vector"], geo_node.outputs["basecolor"])
-        link.new(vec_multiply_node.inputs["Vector"], vec_transform_node.outputs["Vector"])
-        link.new(vec_add_node.inputs["Vector"], vec_multiply_node.outputs["Vector"])
-        link.new(group_outputs.inputs["Output"], vec_add_node.outputs["Vector"])
-    """
+        link.new(group_inputs.outputs["BaseColor"], group_outputs.inputs["Output"])
+        link.new(group_inputs.outputs["BaseColor"], aov_node.inputs["Color"])
 
     # ROUGHNESS
+    if not 'GD_Roughness' in bpy.data.node_groups:
+        # Create node group
+        ng_roughness = bpy.data.node_groups.new('GD_Roughness', 'ShaderNodeTree')
+        ng_roughness.use_fake_user = True
+
+        # Create group outputs
+        group_outputs = ng_roughness.nodes.new('NodeGroupOutput')
+        ng_roughness.outputs.new('NodeSocketShader','Output')
+        ng_roughness.inputs.new('NodeSocketShader','Saved Input')
+        ng_roughness.inputs.new('NodeSocketFloat','Roughness')
+
+        # Create group nodes
+        aov_node = ng_roughness.nodes.new('ShaderNodeOutputAOV')
+        aov_node.location = (0,-200)
+        aov_node.name = 'Roughness'
+        
+        group_inputs = ng_roughness.nodes.new('NodeGroupInput')
+        group_inputs.location = (-400,0)
+
+        # Link nodes
+        link = ng_roughness.links
+
+        link.new(group_inputs.outputs["Roughness"], group_outputs.inputs["Output"])
+        link.new(group_inputs.outputs["Roughness"], aov_node.inputs["Value"])
 
     # METALNESS
+    if not 'GD_Metalness' in bpy.data.node_groups:
+        # Create node group
+        ng_metalness = bpy.data.node_groups.new('GD_Metalness', 'ShaderNodeTree')
+        ng_metalness.use_fake_user = True
+
+        # Create group outputs
+        group_outputs = ng_metalness.nodes.new('NodeGroupOutput')
+        ng_metalness.outputs.new('NodeSocketShader','Output')
+        ng_metalness.inputs.new('NodeSocketShader','Saved Input')
+        ng_metalness.inputs.new('NodeSocketFloat','Metalness')
+
+        # Create group nodes
+        aov_node = ng_metalness.nodes.new('ShaderNodeOutputAOV')
+        aov_node.location = (0,-200)
+        aov_node.name = 'Metalness'
+        
+        group_inputs = ng_metalness.nodes.new('NodeGroupInput')
+        group_inputs.location = (-400,0)
+
+        # Link nodes
+        link = ng_metalness.links
+
+        link.new(group_inputs.outputs["Metalness"], group_outputs.inputs["Output"])
+        link.new(group_inputs.outputs["Metalness"], aov_node.inputs["Value"])
 
     # NORMALS
-
     if not 'GD_Normals' in bpy.data.node_groups:
         # Create node group
         ng_normal = bpy.data.node_groups.new('GD_Normals', 'ShaderNodeTree')
@@ -536,7 +566,6 @@ def ng_setup(self, context):
         link.new(group_outputs.inputs["Output"], vec_add_node.outputs["Vector"])
 
     # AMBIENT OCCLUSION
-
     if not 'GD_Ambient Occlusion' in bpy.data.node_groups:
         # Create node group
         ng_ao = bpy.data.node_groups.new('GD_Ambient Occlusion', 'ShaderNodeTree')
@@ -567,7 +596,6 @@ def ng_setup(self, context):
         link.new(group_outputs.inputs["Output"], emission_node.outputs["Emission"])
 
     # HEIGHT
-
     if not 'GD_Height' in bpy.data.node_groups:
         # Create node group
         ng_height = bpy.data.node_groups.new('GD_Height', 'ShaderNodeTree')
@@ -1178,6 +1206,7 @@ def create_apply_ng_mat(self, context):
 
 
 def add_ng_to_mat(self, context):
+    # TODO: Add AOV support somewhere below
     if self.setup_type != 'None':
         ## ADD NODE GROUP TO ALL MATERIALS, SAVE ORIGINAL LINKS & LINK NODE GROUP TO MATERIAL OUTPUT ##
         for self.ob in context.view_layer.objects:
@@ -1235,7 +1264,7 @@ def basecolor_setup(self, context):
     context.scene.display_settings.display_device = 'None'
 
     self.setup_type = 'GD_BaseColor'
-    #add_ng_to_mat(self, context)
+    add_ng_to_mat(self, context)
 
 def basecolor_export(self, context):
     if self.offlineRenderType == "basecolor":
@@ -1248,7 +1277,54 @@ def basecolor_export(self, context):
             basecolor_reimport_as_mat(self, context)
 
 def basecolor_reimport_as_mat(self, context):
-    return
+    grabDoc = context.scene.grabDoc
+
+    # Remove pre-existing material
+    for mat in bpy.data.materials:
+        if mat.name == f'{grabDoc.exportName}_basecolor':
+            bpy.data.materials.remove(mat)
+            break
+
+    # Remove original image
+    for image in bpy.data.images:
+        if image.name == f'{grabDoc.exportName}_basecolor':
+            bpy.data.images.remove(image)
+            break
+
+    # Create material
+    mat = bpy.data.materials.new(name=f'{grabDoc.exportName}_basecolor')
+    mat.use_nodes = True
+
+    output_node = mat.node_tree.nodes["Material Output"]
+    output_node.location = (0,0)
+
+    bsdf_node = mat.node_tree.nodes["Principled BSDF"]
+    bsdf_node.inputs[5].default_value = 0
+    bsdf_node.location = (-300,0)
+
+    normal_map_node = mat.node_tree.nodes.new('ShaderNodeBaseColorMap')
+    normal_map_node.location = (-500,0)
+
+    if grabDoc.imageType == 'TIFF':
+        file_extension = '.tif'
+    elif grabDoc.imageType == 'TARGA':
+        file_extension = '.tga'
+    else:
+        file_extension = '.png'
+
+    image_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+    image_node.image = bpy.data.images.load(f'{grabDoc.exportPath}{grabDoc.exportName}_basecolor{file_extension}')
+    image_node.image.colorspace_settings.name = 'Linear'
+    image_node.location = (-800,0)
+
+    # Rename the newly imported image
+    bpy.data.images[f'{grabDoc.exportName}_basecolor{file_extension}'].name = f'{grabDoc.exportName}_basecolor'
+
+    # Make links
+    link = mat.node_tree.links
+
+    link.new(normal_map_node.inputs['Color'], image_node.outputs['Color'])
+    link.new(bsdf_node.inputs['BaseColor'], normal_map_node.outputs['BaseColor'])
 
 ## ROUGHNESS ##
 def roughness_setup(self, context):
@@ -1274,7 +1350,54 @@ def roughness_export(self, context):
             roughness_reimport_as_mat(self, context)
 
 def roughness_reimport_as_mat(self, context):
-    return
+    grabDoc = context.scene.grabDoc
+
+    # Remove pre-existing material
+    for mat in bpy.data.materials:
+        if mat.name == f'{grabDoc.exportName}_roughness':
+            bpy.data.materials.remove(mat)
+            break
+
+    # Remove original image
+    for image in bpy.data.images:
+        if image.name == f'{grabDoc.exportName}_roughness':
+            bpy.data.images.remove(image)
+            break
+
+    # Create material
+    mat = bpy.data.materials.new(name=f'{grabDoc.exportName}_roughness')
+    mat.use_nodes = True
+
+    output_node = mat.node_tree.nodes["Material Output"]
+    output_node.location = (0,0)
+
+    bsdf_node = mat.node_tree.nodes["Principled BSDF"]
+    bsdf_node.inputs[5].default_value = 0
+    bsdf_node.location = (-300,0)
+
+    normal_map_node = mat.node_tree.nodes.new('ShaderNodeRoughnessMap')
+    normal_map_node.location = (-500,0)
+
+    if grabDoc.imageType == 'TIFF':
+        file_extension = '.tif'
+    elif grabDoc.imageType == 'TARGA':
+        file_extension = '.tga'
+    else:
+        file_extension = '.png'
+
+    image_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+    image_node.image = bpy.data.images.load(f'{grabDoc.exportPath}{grabDoc.exportName}_roughness{file_extension}')
+    image_node.image.colorspace_settings.name = 'Linear'
+    image_node.location = (-800,0)
+
+    # Rename the newly imported image
+    bpy.data.images[f'{grabDoc.exportName}_roughness{file_extension}'].name = f'{grabDoc.exportName}_roughness'
+
+    # Make links
+    link = mat.node_tree.links
+
+    link.new(normal_map_node.inputs['Color'], image_node.outputs['Color'])
+    link.new(bsdf_node.inputs['Roughness'], normal_map_node.outputs['Roughness'])
 
 ## METALNESS ##
 def metalness_setup(self, context):
@@ -1300,7 +1423,54 @@ def metalness_export(self, context):
             metalness_reimport_as_mat(self, context)
 
 def metalness_reimport_as_mat(self, context):
-    return
+    grabDoc = context.scene.grabDoc
+
+    # Remove pre-existing material
+    for mat in bpy.data.materials:
+        if mat.name == f'{grabDoc.exportName}_roughness':
+            bpy.data.materials.remove(mat)
+            break
+
+    # Remove original image
+    for image in bpy.data.images:
+        if image.name == f'{grabDoc.exportName}_roughness':
+            bpy.data.images.remove(image)
+            break
+
+    # Create material
+    mat = bpy.data.materials.new(name=f'{grabDoc.exportName}_metalness')
+    mat.use_nodes = True
+
+    output_node = mat.node_tree.nodes["Material Output"]
+    output_node.location = (0,0)
+
+    bsdf_node = mat.node_tree.nodes["Principled BSDF"]
+    bsdf_node.inputs[5].default_value = 0
+    bsdf_node.location = (-300,0)
+
+    normal_map_node = mat.node_tree.nodes.new('ShaderNodeMetalnessMap')
+    normal_map_node.location = (-500,0)
+
+    if grabDoc.imageType == 'TIFF':
+        file_extension = '.tif'
+    elif grabDoc.imageType == 'TARGA':
+        file_extension = '.tga'
+    else:
+        file_extension = '.png'
+
+    image_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+    image_node.image = bpy.data.images.load(f'{grabDoc.exportPath}{grabDoc.exportName}_metalness{file_extension}')
+    image_node.image.colorspace_settings.name = 'Linear'
+    image_node.location = (-800,0)
+
+    # Rename the newly imported image
+    bpy.data.images[f'{grabDoc.exportName}_metalness{file_extension}'].name = f'{grabDoc.exportName}_metalness'
+
+    # Make links
+    link = mat.node_tree.links
+
+    link.new(normal_map_node.inputs['Color'], image_node.outputs['Color'])
+    link.new(bsdf_node.inputs['Metalness'], normal_map_node.outputs['Metalness'])
 
 ## NORMALS ##
 def normals_setup(self, context):
