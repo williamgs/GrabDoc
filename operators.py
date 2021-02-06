@@ -459,6 +459,7 @@ def ng_setup(self, context):
         ng_basecolor.outputs.new('NodeSocketShader','Output')
         ng_basecolor.inputs.new('NodeSocketShader','Saved Input')
         ng_basecolor.inputs.new('NodeSocketColor','BaseColor')
+        ng_basecolor.inputs['BaseColor'].default_value = (0.8,0.8,0.8,1)
 
         # Create group nodes
         aov_node = ng_basecolor.nodes.new('ShaderNodeOutputAOV')
@@ -485,6 +486,7 @@ def ng_setup(self, context):
         ng_roughness.outputs.new('NodeSocketShader','Output')
         ng_roughness.inputs.new('NodeSocketShader','Saved Input')
         ng_roughness.inputs.new('NodeSocketFloat','Roughness')
+        ng_roughness.inputs['Roughness'].default_value = 0.4
 
         # Create group nodes
         aov_node = ng_roughness.nodes.new('ShaderNodeOutputAOV')
@@ -511,6 +513,7 @@ def ng_setup(self, context):
         ng_metalness.outputs.new('NodeSocketShader','Output')
         ng_metalness.inputs.new('NodeSocketShader','Saved Input')
         ng_metalness.inputs.new('NodeSocketFloat','Metalness')
+        ng_metalness.inputs['Metalness'].default_value = 0.0
 
         # Create group nodes
         aov_node = ng_metalness.nodes.new('ShaderNodeOutputAOV')
@@ -1167,8 +1170,9 @@ def cleanup_ng_from_mat(self, context):
 
                 for input in GD_node_group.inputs:
                     for link in input.links:
-                        original_node_connection = mat.node_tree.nodes.get(link.from_node.name)
-                        original_node_socket = link.from_socket.name
+                        if link.to_socket.name == "Saved Input":
+                            original_node_connection = mat.node_tree.nodes.get(link.from_node.name)
+                            original_node_socket = link.from_socket.name
                         
                 mat.node_tree.links.new(output_node.inputs["Surface"], original_node_connection.outputs[original_node_socket])
                 
@@ -1206,7 +1210,6 @@ def create_apply_ng_mat(self, context):
 
 
 def add_ng_to_mat(self, context):
-    # TODO: Add AOV support somewhere below
     if self.setup_type != 'None':
         ## ADD NODE GROUP TO ALL MATERIALS, SAVE ORIGINAL LINKS & LINK NODE GROUP TO MATERIAL OUTPUT ##
         for self.ob in context.view_layer.objects:
@@ -1248,10 +1251,28 @@ def add_ng_to_mat(self, context):
 
                                         # Link original connection to the Node Group
                                         mat_slot.node_tree.links.new(GD_node_group.inputs["Saved Input"], original_node_connection.outputs[link.from_socket.name])
-
+                                        
+                                        # connect material input to AOV for PBR materials
+                                        if self.setup_type == "GD_BaseColor":
+                                            # set color
+                                            GD_node_group.inputs["BaseColor"].default_value = original_node_connection.inputs["Base Color"].default_value
+                                            # if material has input, use connection
+                                            for aovlink in original_node_connection.inputs["Base Color"].links:
+                                                mat_slot.node_tree.links.new(GD_node_group.inputs["BaseColor"], aovlink.from_socket )
+                                        elif self.setup_type == "GD_Roughness":
+                                            # set color
+                                            GD_node_group.inputs["Roughness"].default_value = original_node_connection.inputs["Roughness"].default_value
+                                            # if material has input, use connection
+                                            for aovlink in original_node_connection.inputs["Roughness"].links:
+                                                mat_slot.node_tree.links.new(GD_node_group.inputs["Roughness"], aovlink.from_socket )
+                                        elif self.setup_type == "GD_Metalness":
+                                            # set color
+                                            GD_node_group.inputs["Metalness"].default_value = original_node_connection.inputs["Metallic"].default_value
+                                            # if material has input, use connection
+                                            for aovlink in original_node_connection.inputs["Metallic"].links:
+                                                mat_slot.node_tree.links.new(GD_node_group.inputs["Metalness"], aovlink.from_socket )
                             # Link Node Group to the output
                             mat_slot.node_tree.links.new(output_node.inputs["Surface"], GD_node_group.outputs["Output"])
-
 
 ## BASECOLOR ##
 def basecolor_setup(self, context):
@@ -1337,7 +1358,7 @@ def roughness_setup(self, context):
     context.scene.display_settings.display_device = 'None'
 
     self.setup_type = 'GD_Roughness'
-    #add_ng_to_mat(self, context)
+    add_ng_to_mat(self, context)
 
 def roughness_export(self, context):
     if self.offlineRenderType == "roughness":
@@ -1410,7 +1431,7 @@ def metalness_setup(self, context):
     context.scene.display_settings.display_device = 'None'
 
     self.setup_type = 'GD_Metalness'
-    #add_ng_to_mat(self, context)
+    add_ng_to_mat(self, context)
 
 def metalness_export(self, context):
     if self.offlineRenderType == "metalness":
